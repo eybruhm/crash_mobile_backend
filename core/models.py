@@ -122,3 +122,60 @@ class Message(models.Model):
     class Meta:
         db_table = 'tbl_messages'
         verbose_name = 'Report Message'
+    
+class Checkpoint(models.Model):
+    checkpoint_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    # Foreign Key to PoliceOffice with CASCADE delete
+    office = models.ForeignKey(
+        'PoliceOffice', 
+        on_delete=models.CASCADE, 
+        db_column='office_id', 
+        blank=True, 
+        null=True
+    )
+    
+    checkpoint_name = models.CharField(max_length=100)
+    contact_number = models.CharField(max_length=20, blank=True, null=True) 
+    
+    time_start = models.TimeField(blank=True, null=True) 
+    time_end = models.TimeField(blank=True, null=True)   
+    
+    latitude = models.DecimalField(max_digits=10, decimal_places=7)
+    longitude = models.DecimalField(max_digits=10, decimal_places=7)
+    assigned_officers = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'tbl_checkpoints'
+        verbose_name = 'Police Checkpoint'
+
+# Media Model (Table H) - NEW MODEL
+class Media(models.Model):
+    FILE_TYPE_CHOICES = [
+        ('image', 'Image'),
+        ('video', 'Video'),
+    ]
+    
+    media_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    # Change back to CharField. Django will NOT handle the upload itself.
+    # The serializer will provide the URL string after S3 upload.
+    file_url = models.CharField(max_length=255, blank=True, null=True)
+    
+    # Foreign Key to Report with CASCADE delete
+    report = models.ForeignKey(
+        'Report', 
+        on_delete=models.CASCADE, 
+        db_column='report_id', 
+        blank=True, 
+        null=True
+    )
+    
+    file_type = models.CharField(max_length=10, choices=FILE_TYPE_CHOICES)
+    sender_id = models.UUIDField() # ID of the uploader (User or Police)
+    uploaded_at = models.DateTimeField(auto_now_add=True) 
+
+    class Meta:
+        db_table = 'tbl_media'
+        verbose_name = 'Report Media'

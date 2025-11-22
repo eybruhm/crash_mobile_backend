@@ -10,6 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
+from dotenv import load_dotenv
+load_dotenv()  
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$#w%jbi_6*cxgg7_^9!4lelcx8v9_j1ixz75#n*zj@qn&%wk!4'
+# SECRET_KEY = 'SECRET_KEY'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -39,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'core',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -78,16 +82,21 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'postgres',
-        'USER': 'postgres',
+        'USER': 'postgres.uhutjmujczeuqeoqosuw',
         'PASSWORD': 'softwareengineering101',
-        'HOST': 'db.uhutjmujczeuqeoqosuw.supabase.co',
+        'HOST': 'aws-1-ap-northeast-2.pooler.supabase.com',
         'PORT': '5432',
     }
 }
 
+# Under DATABASES, ensure the password is still hardcoded for now, but use this for the API Key:
+GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY') 
+SECRET_KEY = os.getenv('SECRET_KEY')
 
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
+# Supabase SDK Settings
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_SERVICE_ROLE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {

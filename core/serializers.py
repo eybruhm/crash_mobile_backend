@@ -1,7 +1,27 @@
 # core/serializers.py
 from rest_framework import serializers
-from .models import Admin, PoliceOffice, Report, Message
 from django.contrib.auth.hashers import make_password
+from django.core.files.storage import default_storage
+from django.conf import settings
+from rest_framework.exceptions import ValidationError
+from supabase import create_client
+import os, uuid
+from .models import (
+    Admin, 
+    PoliceOffice, 
+    Report, 
+    Message,
+    Checkpoint,
+    Media
+)
+
+# Supabase Client Initialization
+# NOTE: Client is initialized once at the module level for efficiency.
+try:
+    _supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+except Exception as e:
+    # Fail fast if connection details are missing
+    raise EnvironmentError(f"Supabase client failed to initialize: {e}")
 
 # Serializer for Admin details 
 class AdminSerializer(serializers.ModelSerializer):
@@ -89,9 +109,64 @@ class ReportStatusUpdateSerializer(serializers.ModelSerializer):
         fields = ('status', 'remarks')
         read_only_fields = ('report_id', 'reporter', 'category', 'latitude', 'longitude') 
 
+# Serializer for Messages between police and citizens
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = '__all__' # Include all fields for simple read/write
         read_only_fields = ('message_id', 'timestamp')
 
+# Serializer for Checkpoints
+class CheckpointSerializer(serializers.ModelSerializer):
+    # Include office_name for list view readability
+    office_name = serializers.CharField(source='office.office_name', read_only=True)
+    
+    class Meta:
+        model = Checkpoint
+        fields = '__all__'
+        read_only_fields = ('checkpoint_id', 'created_at', 'office_name')
+        # Note: office_id (parent FK) will be passed in POST/PUT request body
+
+# Serializer for Media uploads associated with reports
+class MediaSerializer(serializers.ModelSerializer):
+    # This field handles the incoming file data from Postman/Mobile App
+    uploaded_file = serializers.FileField(write_only=True) 
+
+    class Meta:
+        model = Media
+        # Ensure 'uploaded_file' is used for input, and 'file_url' for output
+        fields = ('media_id', 'file_url', 'report', 'file_type', 'sender_id', 'uploaded_file') 
+        read_only_fields = ('media_id', 'uploaded_at', 'file_url')
+
+    def create(self, validated_data):
+        uploaded_file = validated_data.pop('uploaded_file') 
+        report = validated_data['report']
+        
+        # 1. Prepare unique file path
+        # Uses UUID to ensure uniqueness, avoiding collisions, then appends the file extension.
+        _, ext = os.path.splitext(uploaded_file.name or "") 
+        object_name = f"{uuid.uuid4().hex}{ext.lower()}" 
+        # Creates an organized path: crash-media/reports/{report_id}/{file_uuid}.ext
+        object_path = f"reports/{report.report_id}/{object_name}" 
+
+        # 2. File Upload via SDK
+        try:
+            content = uploaded_file.read() 
+            # Use 'from_' method to specify the bucket name
+            _supabase.storage.from_("crash-media").upload(object_path, content) 
+        except Exception as e:
+            # Raise a DRF validation error if the upload fails (e.g., policy denial, size limit)
+            raise serializers.ValidationError({"upload": f"Supabase upload failed: {e}"}) 
+
+        # 3. Retrieve and/or Construct Public URL
+        # NOTE: Using get_public_url() is best practice, but we use the reliable fallback as primary.
+        
+        # Fallback construction using defined settings (guarantees correct format) [cite: 850]
+        base = settings.SUPABASE_URL.rstrip("/") 
+        # Constructs: [BASE_URL]/storage/v1/object/public/crash-media/[OBJECT_PATH]
+        public_url = f"{base}/storage/v1/object/public/crash-media/{object_path}" 
+
+        validated_data['file_url'] = public_url 
+        
+        # 4. Save the database record with the final public URL
+        return super().create(validated_data) 

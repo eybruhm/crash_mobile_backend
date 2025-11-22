@@ -1,12 +1,22 @@
 from django.shortcuts import render
 
+from rest_framework import status, viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated 
 from rest_framework.exceptions import NotFound
+from rest_framework.decorators import action
+from .services import generate_directions_and_qr
+from django.core.files.storage import default_storage
 
-from .models import Admin, PoliceOffice, Report, Message
+from .models import (
+    Admin, 
+    PoliceOffice, 
+    Report, 
+    Message,
+    Checkpoint,
+    Media 
+)
 from .serializers import (
     AdminSerializer, 
     PoliceOfficeLoginSerializer, 
@@ -15,6 +25,8 @@ from .serializers import (
     ReportListSerializer,
     ReportStatusUpdateSerializer,
     MessageSerializer,
+    CheckpointSerializer,
+    MediaSerializer
 )
 
 # Create your views here.
@@ -152,13 +164,45 @@ class ReportViewSet(viewsets.ModelViewSet):
             return ReportStatusUpdateSerializer
         return ReportListSerializer # Default for GET (list/retrieve)
 
+    # NEW ACTION: GET /reports/{report_id}/route/
+    @action(detail=True, methods=['get'])
+    def route(self, request, pk=None):
+        """
+        Calculates and returns the routing URL and QR code for a specific report.
+        """
+        try:
+            # 1. Get Report details (User's location)
+            report = self.get_object() # Fetches the report instance based on URL ID (pk)
+
+            # 2. Get Police Office details (Start location)
+            assigned_office = report.assigned_office
+
+            if not assigned_office:
+                return Response({"detail": "Report is not yet assigned to an office."}, 
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            # 3. Call the Service function
+            routing_data = generate_directions_and_qr(
+                start_lat=assigned_office.latitude,
+                start_lng=assigned_office.longitude,
+                end_lat=report.latitude,
+                end_lng=report.longitude
+            )
+
+            # 4. Return the result
+            return Response(routing_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            # Basic error handling for key configuration issues
+            return Response({"detail": f"Routing error: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     
     # We define this dynamically based on the URL path
     def get_queryset(self):
-        # 1. Get report_id from the URL path (from core/urls.py)
-        report_id = self.kwargs.get('report_id')
+        # 1. Get report_id from the URL path (using the correct 'report_pk' key)
+        report_id = self.kwargs.get('report_pk') # <--- CORRECTED KEY
         
         if report_id:
             # 2. Filter messages only for the specified report
@@ -189,3 +233,18 @@ class MessageViewSet(viewsets.ModelViewSet):
             # in the request body for testing flexibility.
         )
 
+class CheckpointViewSet(viewsets.ModelViewSet):
+    # Fetch all checkpoints and pre-fetch the related office name
+    queryset = Checkpoint.objects.all().select_related('office').order_by('-created_at') 
+    serializer_class = CheckpointSerializer
+    
+    # Optional: We can add perform_create here to link the checkpoint to the PoliceOffice 
+    # based on the Admin's or Police Officer's identity, but for now, 
+    # we rely on 'office' being passed in the POST body.
+
+class MediaViewSet(viewsets.ModelViewSet):
+    # Allow full CRUD access (Admin/Police/Citizen may upload media)
+    queryset = Media.objects.all().select_related('report')
+    serializer_class = MediaSerializer
+    
+    # Optional: You can implement permissions here to restrict uploads to logged-in users.

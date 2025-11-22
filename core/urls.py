@@ -2,7 +2,14 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
-from .views import LoginAPIView, PoliceOfficeAdminViewSet, ReportViewSet, MessageViewSet
+from .views import (
+    LoginAPIView, 
+    PoliceOfficeAdminViewSet, 
+    ReportViewSet, 
+    MessageViewSet, 
+    CheckpointViewSet,
+    MediaViewSet
+)
 
 # Create a router instance
 router = DefaultRouter()
@@ -10,6 +17,10 @@ router = DefaultRouter()
 router.register(r'admin/police-offices', PoliceOfficeAdminViewSet, basename='police-office')
 # Register the Report ViewSet
 router.register(r'reports', ReportViewSet, basename='report') 
+# Register the Checkpoint ViewSet
+router.register(r'checkpoints', CheckpointViewSet, basename='checkpoint') 
+# Register the Media ViewSet
+router.register(r'media', MediaViewSet, basename='media')
 
 # Create the nested router for messages
 reports_router = routers.NestedSimpleRouter(router, r'reports', lookup='report')
