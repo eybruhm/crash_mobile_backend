@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>CRASH Deep Dive - {{ category_filter_name }} Incidents</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 20px; font-size: 10pt; }
+        header { margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        h1 { font-size: 16pt; color: #333; }
+        h2 { font-size: 12pt; color: #555; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        .summary-box { background-color: #e0f7fa; padding: 10px; border-left: 5px solid #00bcd4; margin-bottom: 20px; }
+        footer { font-size: 8pt; color: #666; margin-top: 15px; }
+        footer .footer-title { margin-bottom: 5px; font-weight: bold; }
+        footer .footer-table { width: 100%; border: none; }
+        footer .footer-table tr { border: none; }
+        footer .footer-table td { border: none; padding: 2px; }
+        footer .footer-table td.half-width { width: 50%; }
+        footer .footer-disclaimer { text-align: center; margin-top: 10px; }
+        hr.footer-divider { margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Focused Audit: Analysis of {{ category_filter_name }} Incidents</h1>
+        <p>This report tracks incidents of <strong>{{ category_filter_name }}</strong> assigned to <strong>{{ audit_scope }}</strong> over the last <strong>{{ timeframe_days }}</strong> days.</p>
+    </header>
+
+    <div class="summary-box">
+        Total <strong>{{ category_filter_name }}</strong> Reports Logged: <strong>{{ total_reports }}</strong> | This represents <strong>{{ total_reports_percent|floatformat:2 }}%</strong> of all reports in the scope.
+    </div>
+
+    <h2>I. Top 5 Geographic Hotspots for {{ category_filter_name }}</h2>
+    <p>Ranks the city/barangay combinations by volume specifically for {{ category_filter_name }} incidents.</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>City/Barangay</th>
+                <th>Report Count</th>
+                <th>Percentage (%) of Total Category Reports</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in top_locations_list %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.location_city }} - {{ item.location_barangay }}</td>
+                <td>{{ item.report_count }}</td>
+                <td>{{ item.report_percent|floatformat:2 }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>II. Supporting Metrics</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Average Resolution Time for {{ category_filter_name }} Cases</td>
+                <td>{{ avg_resolution_time }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>III. Category Concentration</h2>
+    <p>Top categories by volume based on the selected filters.</p>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 60px;">Rank</th>
+                <th>Category</th>
+                <th style="width: 120px;">Report Count</th>
+                <th style="width: 140px;">Percentage (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if category_is_specific %}
+                {% for item in category_results %}
+                <tr>
+                    <td>1</td>
+                    <td>{{ item.category }}</td>
+                    <td>{{ item.report_count }}</td>
+                    <td>{{ item.percentage|floatformat:2 }}%</td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                {% for item in category_results %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ item.category }}</td>
+                    <td>{{ item.report_count }}</td>
+                    <td>{{ item.percentage|floatformat:2 }}%</td>
+                </tr>
+                {% endfor %}
+            {% endif %}
+        </tbody>
+    </table>
+
+    <hr class="footer-divider">
+    <footer>
+        <p class="footer-title">Official Audit and Documentation Record</p>
+        
+        <table class="footer-table">
+            <tr>
+                <td class="half-width">
+                    <strong>Source Office:</strong> {{ office_name }}
+                </td>
+                <td class="half-width">
+                    <strong>Date Generated:</strong> {{ current_datetime|date:"Y-m-d H:i:s" }}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <strong>Report Authored By:</strong> {{ head_officer_name }} (Head Officer)
+                </td>
+                <td>
+                    <strong>Purpose/Remarks:</strong> This data is for internal audit, strategic resource deployment, and government compliance only.
+                </td>
+            </tr>
+        </table>
+        <p class="footer-disclaimer">
+            CRASH System V1.0 - Confidential Law Enforcement Data
+        </p>
+    </footer>
+</body>
+</html>

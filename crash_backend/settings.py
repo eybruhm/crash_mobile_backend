@@ -60,7 +60,7 @@ ROOT_URLCONF = 'crash_backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'core' / 'pdf-templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -125,6 +125,14 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Cache Configuration for Lock Mechanism
+# Uses in-memory cache for analytics update lock
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-cache',
+    }
+}
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

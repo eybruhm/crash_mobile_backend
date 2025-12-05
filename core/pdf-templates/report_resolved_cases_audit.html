@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>CRASH Case File - {{ report.report_id }}</title>
+    <style>
+        /* Reusing the CSS from the analytics templates for consistency */
+        body { font-family: sans-serif; margin: 0; padding: 20px; font-size: 10pt; }
+        header { margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        h1 { font-size: 16pt; color: #333; }
+        h2 { font-size: 12pt; color: #555; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        .summary-box { background-color: #e0f7fa; padding: 10px; border-left: 5px solid #00bcd4; margin-bottom: 20px; }
+        .remarks-box { background-color: #fff3e0; padding: 15px; border: 1px solid #ffcc80; margin-top: 15px; }
+        
+        /* Footer Specific Styles */
+        footer { font-size: 8pt; color: #666; margin-top: 15px; }
+        footer .footer-title { margin-bottom: 5px; font-weight: bold; }
+        footer .footer-table { width: 100%; border: none; }
+        footer .footer-table tr { border: none; }
+        footer .footer-table td { border: none; padding: 2px; }
+        footer .footer-table td.half-width { width: 50%; }
+        footer .footer-disclaimer { text-align: center; margin-top: 10px; }
+        hr.footer-divider { margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>CRASH OFFICIAL INCIDENT CASE FILE</h1>
+        <p>Report ID: <strong>{{ report.report_id }}</strong></p>
+    </header>
+
+    <h2>I. Incident & Status Summary</h2>
+    <table>
+        <tbody>
+            <tr>
+                <th style="width: 30%;">Incident Category:</th>
+                <td style="font-weight: bold;">{{ report.category }}</td>
+            </tr>
+            <tr>
+                <th>Current Status:</th>
+                <td style="color: green; font-weight: bold;">{{ report.status }}</td>
+            </tr>
+            <tr>
+                <th>Reported On (Start Time):</th>
+                <td>{{ report.created_at|date:"Y-m-d H:i:s" }}</td>
+            </tr>
+            <tr>
+                <th>Resolved On (End Time):</th>
+                <td>{{ report.updated_at|date:"Y-m-d H:i:s" }}</td>
+            </tr>
+            <tr>
+                <th>Total Resolution Time:</th>
+                <td>{{ calculated_resolution_time }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>II. Incident Location & Details</h2>
+    <table>
+        <tbody>
+            <tr>
+                <th style="width: 30%;">Location Address:</th>
+                <td>{{ report.location_barangay }}, {{ report.location_city }}</td>
+            </tr>
+            <tr>
+                <th>Geocoordinates (Lat/Lng):</th>
+                <td>{{ report.latitude }}, {{ report.longitude }}</td>
+            </tr>
+            <tr>
+                <th>Assigned Police Office:</th>
+                <td>{{ assigned_office.office_name }}</td>
+            </tr>
+            <tr>
+                <th>Police Office ID:</th>
+                <td>{{ office_id_str }}</td>
+            </tr>
+            <tr>
+                <th>Report Description:</th>
+                <td>{{ report.description|linebreaksbr }}</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <h3>Resolution Summary & Remarks</h3>
+    <div class="remarks-box">
+        <p style="font-style: italic;">{{ report.remarks|default:"No formal remarks were recorded for this resolution." }}</p>
+    </div>
+
+    <h2>III. Reporter Information (For Confidential Use Only)</h2>
+    <table>
+        <tbody>
+            <tr>
+                <th style="width: 30%;">Reporter Name:</th>
+                <td>{{ reporter.first_name }} {{ reporter.last_name }}</td>
+            </tr>
+            <tr>
+                <th>Reporter Email:</th>
+                <td>{{ reporter.email }}</td>
+            </tr>
+            <tr>
+                <th>Reporter Phone:</th>
+                <td>{{ reporter.phone }}</td>
+            </tr>
+            <tr>
+                <th>Emergency Contact:</th>
+                <td>{{ reporter.emergency_contact_name }} ({{ reporter.emergency_contact_number }})</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr class="footer-divider">
+    <footer>
+        <p class="footer-title">Official Audit and Documentation Record</p>
+        
+        <table class="footer-table">
+            <tr>
+                <td class="half-width">
+                    <strong>Source Office:</strong> {{ assigned_office.office_name }}
+                </td>
+                <td class="half-width">
+                    <strong>Date Generated:</strong> {{ current_datetime|date:"Y-m-d H:i:s" }}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <strong>Report Authored By:</strong> {{ assigned_office.head_officer }} (Head Officer)
+                </td>
+                <td>
+                    <strong>Purpose/Remarks:</strong> This data is for internal audit, strategic resource deployment, and government compliance only.
+                </td>
+            </tr>
+        </table>
+        <p class="footer-disclaimer">
+            CRASH System V1.0 - Confidential Law Enforcement Data
+        </p>
+    </footer>
+</body>
+</html>

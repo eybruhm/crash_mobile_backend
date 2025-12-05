@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>CRASH Resolved Cases Audit Report</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 20px; font-size: 10pt; }
+        header { margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        h1 { font-size: 16pt; color: #333; margin: 0; }
+        .filters { font-size: 9pt; color: #666; margin-top: 5px; }
+        .filters strong { color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 9pt; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .summary-box { background-color: #e8f5e9; padding: 10px; border-left: 5px solid #4caf50; margin-bottom: 15px; }
+        footer { font-size: 8pt; color: #666; margin-top: 20px; text-align: center; border-top: 1px solid #ddd; padding-top: 10px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Resolved Cases Audit Report</h1>
+        <div class="filters">
+            <strong>Timeframe:</strong> Last {{ timeframe_days }} days | 
+            <strong>Scope:</strong> {{ audit_scope }} | 
+            <strong>City:</strong> {{ city|default:"All" }} | 
+            <strong>Barangay:</strong> {{ barangay|default:"All" }} | 
+            <strong>Category:</strong> {{ category|default:"All" }}
+        </div>
+    </header>
+
+    <div class="summary-box">
+        <strong>Total Resolved Cases:</strong> {{ rows|length }}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 80px;">Report ID</th>
+                <th style="width: 80px;">Category</th>
+                <th style="width: 120px;">Location</th>
+                <th style="width: 100px;">Created</th>
+                <th style="width: 100px;">Updated</th>
+                <th style="width: 80px;">Resolution Time</th>
+                <th>Remarks</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in rows %}
+            <tr>
+                <td style="font-size: 8pt;">{{ r.report_id_short }}</td>
+                <td>{{ r.category }}</td>
+                <td>{{ r.location_city }}, {{ r.location_barangay }}</td>
+                <td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
+                <td>{{ r.updated_at|date:"Y-m-d H:i" }}</td>
+                <td>{{ r.resolution_time_str }}</td>
+                <td style="font-size: 8pt;">{{ r.remarks|default:"N/A"|truncatewords:15 }}</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; color: #999;">No resolved cases found for the selected filters.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <hr style="margin-top: 30px; border: none; border-top: 1px solid #ddd;">
+    <footer>
+        <p style="font-weight: bold; margin-bottom: 5px;">Official Audit and Documentation Record</p>
+        <table style="width: 100%; border: none; font-size: 8pt;">
+            <tr style="border: none;">
+                <td style="border: none; padding: 2px; width: 50%;"><strong>Source Office:</strong> {{ office_name }}</td>
+                <td style="border: none; padding: 2px; width: 50%;"><strong>Date Generated:</strong> {{ current_datetime|date:"Y-m-d H:i:s" }}</td>
+            </tr>
+            <tr style="border: none;">
+                <td style="border: none; padding: 2px;"><strong>Report Authored By:</strong> {{ head_officer_name }} (Head Officer)</td>
+                <td style="border: none; padding: 2px;"><strong>Purpose/Remarks:</strong> This data is for internal audit, strategic resource deployment, and government compliance only.</td>
+            </tr>
+        </table>
+        <p style="text-align: center; margin-top: 10px;">CRASH System V1.0 - Confidential Law Enforcement Data</p>
+    </footer>
+</body>
+</html>

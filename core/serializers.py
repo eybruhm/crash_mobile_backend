@@ -12,7 +12,8 @@ from .models import (
     Report, 
     Message,
     Checkpoint,
-    Media
+    Media,
+    SummaryAnalytics
 )
 
 # Supabase Client Initialization
@@ -73,7 +74,13 @@ class ReportCreateSerializer(serializers.ModelSerializer):
             'latitude', 
             'longitude', 
             'reporter', # The ID will be passed/inferred during POST
+            'location_city',     
+            'location_barangay'  
         )
+        extra_kwargs = {
+            'location_city': {'required': False},
+            'location_barangay': {'required': False},
+        }
 
 # Serializer for listing active reports (output to police dashboard)
 class ReportListSerializer(serializers.ModelSerializer):
@@ -81,6 +88,8 @@ class ReportListSerializer(serializers.ModelSerializer):
     assigned_office_name = serializers.CharField(source='assigned_office.office_name', read_only=True)
     reporter_full_name = serializers.SerializerMethodField(read_only=True)
     
+    incident_address = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Report
         fields = (
@@ -92,7 +101,8 @@ class ReportListSerializer(serializers.ModelSerializer):
             'longitude',
             'description',
             'assigned_office_name', 
-            'reporter_full_name'    
+            'reporter_full_name',
+            'incident_address',    
         )
     
     # Custom method to join first and last names
@@ -100,6 +110,12 @@ class ReportListSerializer(serializers.ModelSerializer):
         if obj.reporter:
             return f"{obj.reporter.first_name} {obj.reporter.last_name}"
         return "N/A" # If reporter is null (deleted account)
+    
+    # Custom method to format incident address
+    def get_incident_address(self, obj):
+        if obj.location_barangay and obj.location_city:
+            return f"{obj.location_barangay}, {obj.location_city}"
+        return "Address Pending"
     
 # Serializer for updating report status (used by police to update status)
 class ReportStatusUpdateSerializer(serializers.ModelSerializer):
@@ -170,3 +186,10 @@ class MediaSerializer(serializers.ModelSerializer):
         
         # 4. Save the database record with the final public URL
         return super().create(validated_data) 
+    
+# Serializer for Summary Analytics (for dashboard charts)
+class SummaryAnalyticsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SummaryAnalytics
+        # Use only the fields necessary for charting/display
+        fields = ('location_city', 'location_barangay', 'category', 'report_count')
